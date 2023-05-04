@@ -1,0 +1,12 @@
+{
+	"manifest_version": 3,
+	"name": "Auto Desmos",
+	"version": "0.0.1",
+	"description": "An extension which brings ChatGPT's powers into Desmos",
+	"content_scripts": [
+		{
+			"matches": ["https://www.desmos.com/calculator/*"],
+			"js": ["test.js"]
+		}
+	]
+}
