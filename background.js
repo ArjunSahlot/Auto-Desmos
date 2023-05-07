@@ -1,46 +1,51 @@
-async function getCookie() {
-  const cookie = (await chrome.cookies.getAll({ url: 'https://chat.openai.com/' }))
-    .map((cookie) => {
-      return `${cookie.name}=${cookie.value}`
-    })
-    .join('; ')
-  return cookie;
+let equationIndex = 0;
+
+function handleResponse(response) {
+	let open = false;
+	let i = 0;
+	response.replace("'", '"');
+	while (i < response.length) {
+		if (response[i] === '"') {
+			open = !open;
+		} else if (response[i] === " ") {
+			if (!open) {
+				response = response.slice(0, i) + response.slice(i + 1);
+				i--;
+			}
+		}
+		i++;
+	}
+
+	response = JSON.parse(response);
+
+	if (response.mode === "equations") {
+		for (let i = 0; i < response.value.length; i++) {
+			addEquation(response.value[i]);
+		}
+	} else if (response.mode === "error") {
+		alert("Error: " + response.value);
+	}
 }
 
-async function getToken() {
-  const resp = await fetch('https://chat.openai.com/api/auth/session', {
-    headers: {
-      Cookie: await getCookie(),
-    },
-  })
-  if (resp.status === 403) {
-    throw new Error('CLOUDFLARE')
-  }
-  const data = await resp.json().catch(() => ({}))
-  if (!data.accessToken) {
-    throw new Error('UNAUTHORIZED')
-  }
-  return data.accessToken
+function addEquation(latex) {
+	add = (equationIndex, latex) => {
+		Calc.setExpression({ id: equationIndex.toString(), latex: latex });
+	};
+
+	chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+		chrome.scripting.executeScript({
+			target: { tabId: tabs[0].id },
+			world: "MAIN",
+			func: add,
+			args: [equationIndex, latex],
+		});
+	});
+
+	equationIndex++;
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'getToken') {
-    getToken()
-      .then((token) => {
-        sendResponse({ token: token });
-      })
-      .catch((error) => {
-        sendResponse({ error: error.message });
-      });
-    return true;
-  } else if (request.action === 'getCookie') {
-    getCookie()
-      .then((token) => {
-        sendResponse({ token: token });
-      })
-      .catch((error) => {
-        sendResponse({ error: error.message });
-      });
-    return true;
-  }
+	if (request.action === "handleResponse") {
+		handleResponse(request.response);
+	}
 });
