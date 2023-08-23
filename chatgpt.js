@@ -13,26 +13,34 @@ The following is the prompt: "{[#*#$#$#@#]}"
 
 THERE SHOULD BE NOTHING IN YOUR RESPONSE APART FROM THE JSON. YOUR RESPONSE MUST NOT CONTAIN ANY DESCRIPTIONS BEFORE OR AFTER THE CURLY BRACES FOR JSON.`;
 
-async function askChatGPT(question) {
+async function askChatGPT(prompt) {
 	try {
-		const response = await fetch("https://chatgpt-proxy-arjunsahlot.koyeb.app/pawanchatgpt", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({ messages: [{ role: "user", content: question }] }),
+		chrome.storage.sync.get(["apiKey"], async (result) => {
+			try {
+				const response = await fetch("https://personal-chatgpt-api.onrender.com/chat", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						model: "gpt-3.5-turbo",
+						message: prompt,
+						api_key: result.apiKey,
+					}),
+				});
+
+				if (response.ok) {
+					const data = await response.json();
+					return data.message;
+				} else {
+					throw new Error("Network response was not ok");
+				}
+			} catch (error) {
+				console.error("There was a problem with the fetch operation:", error);
+				throw error;
+			}
 		});
-
-		if (!response.ok) {
-			throw new Error(`Error ${response.status}: ${response.statusText}`);
-		}
-
-		const data = await response.json();
-		const answer = data.answer;
-
-		return answer;
 	} catch (error) {
-		console.log(error);
-		alert("Error:", error);
+		console.error("There");
 	}
 }

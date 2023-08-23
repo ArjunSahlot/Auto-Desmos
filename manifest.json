@@ -3,7 +3,7 @@
 	"name": "Auto Desmos",
 	"version": "0.0.1",
 	"description": "An extension which brings ChatGPT's powers into Desmos",
-	"permissions": ["activeTab", "scripting", "tabs"],
+	"permissions": ["activeTab", "scripting", "tabs", "storage"],
 	"host_permissions": ["https://www.desmos.com/calculator/*"],
 	"background": {
 		"service_worker": "background.js"
@@ -14,6 +14,10 @@
 			"js": ["desmos.js", "chatgpt.js"]
 		}
 	],
+	"action": {
+		"default_popup": "popup.html",
+		"default_title": "Auto Desmos"
+	},
 	"icons": {
 		"16": "icon16.jpg",
 		"32": "icon32.jpg",
