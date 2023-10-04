@@ -1,22 +1,13 @@
-const CHATGPT_PROMPT = `You are DesmosGPT, an AI that helps people with Desmos, and just Desmos. Construct your response in the following format, do not add any extra information/descriptions:
-2 Modes ("equations", "error")
-JSON Format, 2 keys - "mode" and "value"
-Example:
-{
-    "mode": [MODE],
-    "value": [VALUE]
-}
-- If you can give an answer to this prompt as an equation(s), then set mode to "equations" and the value should be a list of strings in latex. You can have multiple equations if you want, or a single one. This depends on the interpretation of the prompt.
-- If the prompt is not related to Desmos or you don't have an answer, the mode should be "error" and the value should be a short description of what went wrong.
+const CHATGPT_PROMPT = `You are DesmosGPT, an AI that helps people with Desmos, and just Desmos. You are given the following prompt: "{[#*#$#$#@#]}".
+The user wants this modification to their Desmos graph.
+If you think the user is trying to add equations to their graph, then set mode to "equations" and the value should be a list of strings in latex. You can have multiple equations if you want, or a single one. This depends on the interpretation of the prompt.
+If you think the prompt is not related to Desmos or you don't have an answer, the mode should be "error" and the value should be a short description of what went wrong.`;
 
-The following is the prompt: "{[#*#$#$#@#]}"
-
-THERE SHOULD BE NOTHING IN YOUR RESPONSE APART FROM THE JSON. YOUR RESPONSE MUST NOT CONTAIN ANY DESCRIPTIONS BEFORE OR AFTER THE CURLY BRACES FOR JSON.`;
-
-async function askChatGPT(prompt) {
+async function askChatGPT(prompt, handleResponse) {
 	try {
 		chrome.storage.sync.get(["apiKey"], async (result) => {
 			try {
+				console.log("TRYING TO FETCH");
 				const response = await fetch("https://personal-chatgpt-api.onrender.com/chat", {
 					method: "POST",
 					headers: {
@@ -26,12 +17,43 @@ async function askChatGPT(prompt) {
 						model: "gpt-3.5-turbo",
 						message: prompt,
 						api_key: result.apiKey,
+						functions: [
+							{
+								name: "modify_desmos",
+								description: "Modifies a Desmos graph based on the mode and value parameters provided",
+								parameters: {
+									type: "object",
+									properties: {
+										mode: {
+											type: "string",
+											description: "The mode, for example 'equations' or 'error'",
+											enum: ["equations", "error"],
+										},
+										value: {
+											description:
+												"The value based on the mode, for example a LaTeX equation string or list of strings. Or an error message string.",
+										},
+									},
+									required: ["mode", "value"],
+								},
+							},
+						],
+						function_call: {
+							name: "modify_desmos",
+						},
 					}),
 				});
+				console.log("FETCHED");
 
 				if (response.ok) {
 					const data = await response.json();
-					return data.message;
+					if (!data.message.function_call) {
+						throw new Error("No function call response received");
+					} else {
+						const arguments = JSON.parse(data.message.function_call.arguments);
+						handleResponse(arguments);
+						console.log("SENT");
+					}
 				} else {
 					throw new Error("Network response was not ok");
 				}
@@ -41,6 +63,7 @@ async function askChatGPT(prompt) {
 			}
 		});
 	} catch (error) {
-		console.error("There");
+		console.error(error);
+		throw error;
 	}
 }

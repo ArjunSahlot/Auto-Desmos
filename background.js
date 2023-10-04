@@ -1,22 +1,5 @@
-let equationIndex = 0;
-
 function handleResponse(response) {
-	let open = false;
-	let i = 0;
-	response.replace("'", '"');
-	while (i < response.length) {
-		if (response[i] === '"') {
-			open = !open;
-		} else if (response[i] === " ") {
-			if (!open) {
-				response = response.slice(0, i) + response.slice(i + 1);
-				i--;
-			}
-		}
-		i++;
-	}
-
-	response = JSON.parse(response);
+	console.log(response);
 
 	if (response.mode === "equations") {
 		for (let i = 0; i < response.value.length; i++) {
@@ -28,8 +11,8 @@ function handleResponse(response) {
 }
 
 function addEquation(latex) {
-	add = (equationIndex, latex) => {
-		Calc.setExpression({ id: equationIndex.toString(), latex: latex });
+	add = (latex) => {
+		Calc.setExpression({ id: Math.floor(Math.random() * 1000000).toString(), latex: latex });
 	};
 
 	chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -37,11 +20,9 @@ function addEquation(latex) {
 			target: { tabId: tabs[0].id },
 			world: "MAIN",
 			func: add,
-			args: [equationIndex, latex],
+			args: [latex],
 		});
 	});
-
-	equationIndex++;
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

@@ -49,20 +49,18 @@ sendButton.style.top = "50%";
 sendButton.style.transform = "translateY(-50%)";
 
 function handleResponse(response) {
-	return new Promise((resolve, reject) => {
-		chrome.runtime.sendMessage({ action: "handleResponse", response: response });
-	});
+	chrome.runtime.sendMessage({ action: "handleResponse", response: response });
 }
 
 sendButton.addEventListener("click", async function () {
+	console.log("CLICKED");
 	try {
 		const question = inputElement.value;
-		const response = await askChatGPT(CHATGPT_PROMPT.replace("{[#*#$#$#@#]}", question));
-		console.log(response);
-		handleResponse(response);
+		console.log("SENDING TO CHATGPT");
+		await askChatGPT(CHATGPT_PROMPT.replace("{[#*#$#$#@#]}", question), handleResponse);
 		inputElement.value = "";
 	} catch (error) {
-		console.log(error);
+		console.error(error);
 		alert(error);
 	}
 });

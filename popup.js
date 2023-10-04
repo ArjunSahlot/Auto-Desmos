@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	resetButton.addEventListener("click", () => {
 		chrome.storage.sync.set({ apiKey: "" }, () => {
-			console.log("API key saved");
+			console.log("API key reset");
 			apiKeyInput.value = "";
 		});
 	});
